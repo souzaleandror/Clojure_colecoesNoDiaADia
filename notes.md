@@ -206,3 +206,265 @@ Utilizar a função seq para ver a sequência de elementos;
 Utilizar a função do para rodar tudo que está dentro do if;
 Fazer recursão;
 Utilizar a função recur para dizer que estamos fazendo uma recursão.
+
+#### 24/10/2023
+
+@02-Aridade e loops
+
+@@01
+Projeto da aula anterior
+
+Caso queira, você pode baixar o projeto do curso no ponto em que paramos na aula anterior.
+
+https://github.com/alura-cursos/clojure-introducao-a-colecoes/archive/aula1.zip
+
+@@02
+Nosso count e múltiplas variações de uma mesma função por aridade distinta
+
+Fomos introduzidos ao tail recursion e implementamos nosso próprio mapa, mas agora queremos implementar nosso próprio tipo de reduce. Da maneira que estamos trabalhando atualmente, não temos um valor acumulado apenas imprimimos informação. Queremos, por exemplo, contar o número de elementos ou somar todos os valores.
+Criaremos um novo arquivo chamado loja.alura2, e queremos implementar uma contagem dos elementos, que são 6 nomes.
+
+(ns loja.aula2)
+
+; ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]COPIAR CÓDIGO
+Começamos a nossa conta com o número 0, o total até agora e os elementos. Se temos um punhado de bolinhas de gude, mentalizamos o número zero e então vamos contando e retirando uma por uma, 1,2,3 até que as bolinhas de gude terminem.
+
+(ns loja.aula2)
+
+; ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]
+
+(defn conta
+    [total-ate-agora elementos]
+COPIAR CÓDIGO
+Não precisamos saber qual é o primeiro elemento porque não faremos nada com ele, mas precisamos do resto. Portanto, usaremos novamente o rest por padrão, então chamaremos a própria conta. Se retiramos um dos elementos, temos o + total-ate-agrora 1, então estamos somando mais 1, também chamado de inc. Já sabemos, também, que é importante utilizarmos o termo recur. Então chamaremos conta.
+
+(ns loja.aula2)
+
+; ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]
+
+(defn conta
+    [total-ate-agora elementos]
+    (recur (inc total-ate-agora) (rest elementos))
+    )
+
+(conta ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"])
+COPIAR CÓDIGO
+Teremos uma mensagem de erro que alega a falta de 1 argumento. Precisamos declarar o total de elementos até agora. Lembrando que o objetivo da função é retornar esse total, portanto acrescentaremos também o println.
+
+(ns loja.aula2)
+
+; ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]
+
+(defn conta
+    [total-ate-agora elementos]
+    (recur (inc total-ate-agora) (rest elementos))
+    )
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+COPIAR CÓDIGO
+Executaremos novamente o código. Nada ocorreu, por que ?
+
+Em nosso código fizemos a recorrência de maneira infinita, nunca paramos. Diferentemente do que o ocorreu em meu-mapa, paramos a execução no momento em que os elementos findam. É fundamental fazermos o critério de parada.
+
+Lembrando que o nextde uma sequência vazia retorna nil, então ao invés de usarmos o rest, usaremos o next. Escreveremos a condicional if para estipular que, caso haja novos elementos em seguida, queremos executar o código.
+
+(ns loja.aula2)
+
+; ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]
+
+(defn conta
+    [total-ate-agora elementos]
+    (recur (inc total-ate-agora) (rest elementos))
+    )
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+
+(defn conta
+    [total-ate-agora elementos]
+    (if (next elementos)
+        (recur (inc total-ate-agora) (next elementos))))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+COPIAR CÓDIGO
+Ao executarmos o código teremos como resultado impresso nil. Por que isso o ocorreu se na verdade queríamos o total de elementos? Nosso critério de parada é quando o if cai no else, e o else - caso não tenha sido implementado - devolve nil.
+
+(defn conta
+    [total-ate-agora elementos]
+    (if (next elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+COPIAR CÓDIGO
+Ao executarmos o código teremos como resultado o valor 5, mas sabemos que se trata de 6 nomes. Precisamos testar para ter certeza do que houve, então contabilizaremos quantos elementos temos no total ao escrever println total-ate-agora-elementos.
+
+(defn conta
+    [total-ate-agora elementos]
+    (println total-ate-agora-elementos)
+    (if (next elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+COPIAR CÓDIGO
+Teremos como resultado impresso:
+
+0 [daniela guilherme carlos paulo lucia ana]
+1 (guilherme carlos paulo lucia ana)
+2 (carlos paulo lucia ana)
+3 (paulo lucia ana)
+4 (lucia ana)
+5 (ana) 
+5COPIAR CÓDIGO
+Resta somarmos mais um elemento, afinal ana de fato não possui um elemento next, próximo. Existem muitas maneiras de realizar essa soma, aprenderemos uma delas. Podemos simplesmente escrever inc e somar mais um elemento.
+
+(defn conta
+    [total-ate-agora elementos]
+    (println total-ate-agora-elementos)
+    (if (next elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        (inc total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+COPIAR CÓDIGO
+O problema foi corrigido. Mas é interessante pensar nessas táticas em casos extremos: se tivéssemos um vetor vazio essa estratégia ainda seria válida? Testaremos.
+
+(defn conta
+    [total-ate-agora elementos]
+    (println total-ate-agora-elementos)
+    (if (next elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        (inc total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta 0[]))COPIAR CÓDIGO
+O resultado será, obviamente, 1. Já que inc soma um elemento ao vetor. Portanto nesse caso o vetor vazio deverá ter outro dipo de tratamento.
+
+Podemos checar se há algum valor no vetor ao criar na condicional um seq - elemento que transforma uma coleção em uma sequência, e devolve nulo caso essa coleção seja vazia . Precisamos retirar o inc para obter a quantidade correta de elementos.
+
+(defn conta
+    [total-ate-agora elementos]
+    (println total-ate-agora-elementos)
+    (if (seq elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        (total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta 0[]))COPIAR CÓDIGO
+Dessa maneira, teremos o resultado 6 e 0. O código está funcional, mas precisamos nos atentar a alguns detalhes. Sempre precisamos ter um inicializador, no caso , 0. Já o reduce podemos utilizar o 0 ou não.
+
+Quando temos uma função, ela recebe um parâmetro, e podemos acionar o println para este parâmetro. E assim podemos chamar essa função.
+
+(defn minha-funcao [parametro1] (println parametro1)
+(minha-funcao 1)COPIAR CÓDIGO
+Podemos, ainda, dizer que a função terá duas variações, que receberá dois parâmetros. Podemos executar a função tanto como (minha-funcao 1) quanto (minha-funcão 1 2):
+
+(defn minha funcao
+    ([parametro1] (println "p1" parametro1))
+    ([paremetro1 parametro2] (println "p2" parametro1 parametro2)))
+(minha-funcao1)
+(minha-funcao2)COPIAR CÓDIGO
+Trata-se de uma poli-função cuja invocação é definida de acordo com o número de parâmetros. Trata-se de uma maneira de conferir maior flexibilidade às formas.
+
+Podemos aplicar essa ideia em conta. Uma das variações pode receber somente os elementos e chamar a própria conta
+
+(defn conta
+
+    ([elementos]
+     (conta 0 elementos))
+
+    [total-ate-agora elementos]
+    (println total-ate-agora-elementos)
+    (if (seq elementos)
+        (recur (inc total-ate-agora) (next elementos))
+        (total-ate-agora))
+
+(println (conta 0 ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta 0[]))COPIAR CÓDIGO
+Dessa maneira, temos duas variações da função.
+
+@@03
+Loop e sua desvantagem
+
+Apensar de termos estudado as variações de implementação por meio de recursividade, existem momentos em que é preferível utilizar algo equivalente ao loop, arco ou for. O Clojure possui suporte apara algumas dessas sintaxes, então conseguimos criar uma nova variação de conta que receberá os elementos e faremos a contagem por loop.
+Enquanto houver elementos, somaremos 1 no total e que elementos-restantes é o next de elementos-restantes. Esse é o nosso for
+
+; for total-ate-agora 0, elementos-restantes elementos-restantes   ;; 1 next
+
+(defn conta
+    [elementos]
+    (loop))
+
+(println (conta ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta []))COPIAR CÓDIGO
+No loop, definiremos quais são os símbolos que a cada interação deverão ser redefinidos. Iremos, então, redefinir total-ate-agora, que começará com 0. Em seguida, redefiniremos os elementos restantes, cujo valor inicial é elementos. Trata-se de um processo bem parecido com a definição de variável local.
+
+; for total-ate-agora 0, elementos-restantes elementos-restantes   ;; 1 next
+
+(defn conta
+    [elementos]
+    (loop [total-ate-agora 0
+        elementos-restantes elementos]
+
+        ))
+
+(println (conta ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta []))COPIAR CÓDIGO
+Resta adicionarmos uma sequência de execuções. Se há elementos presentes no vetor (seq), iremos somar 1 em total-ate-agora. Além disso, iremos coletar o nest. Com esses valores, poderemos reatribuir o loop. Em outra palavras, iremos recorrer ao loop, substituindo os valores. O recur nessa situação não retorna para a função de acordo com a mesma quantidade de parâmetros que a função recebia, a função afinal recebe um único parâmetro.
+
+; for total-ate-agora 0, elementos-restantes elementos-restantes   ;; 1 next
+
+(defn conta
+    [elementos]
+    (loop [total-ate-agora 0
+        elementos-restantes elementos]
+     (if (seq elementos-restantes)
+       (recur (omc total-ate-agora) (next elementos-restantes))
+         total-ate-agora)))
+
+(println (conta ["daniela" "guilherme" "carlos" "paulo" "lucia" "ana"]))
+(println (conta []))
+COPIAR CÓDIGO
+Definimos uma única função, sem variações, que recebe os elementos com recorrência apenas no loop, podemos ter quantos comandos quisermos antes do loop, eles não serão executados.
+
+Qual é a desvantagem desse loop? Ele só é possível porque já escrevemos um código anterior, afinal poderíamos criar referência direta na função se fosse o caso. Como temos código anterior ao loop, e estamos fazendo a recorrência dentro do loop, é um sinal de que a função está complexa e não acionando boas práticas de programação.
+
+A complexidade ciclomática está alta. Neste caso, costuma-se quebrar a função em duas.
+
+@@04
+For no Clojure
+
+Clojure possui também um for https://clojuredocs.org/clojure.core/for que recebe uma sequência de expressões de inicialização e o corpo a ser executado. Ele funciona de forma similar ao loop, iterando pelos elementos da sequência, mas permitindo já loopar e definir novos símbolos com :when, :while e :let. Como comentamos no caso do loop, tradicionalmente você verá outras formas de executar um mesmo bloco ao invés de loop e for.
+
+https://clojuredocs.org/clojure.core/for
+
+@@05
+Faça como eu fiz na aula
+
+Chegou a hora de você seguir todos os passos realizados por mim durantes esta aula. Caso já tenha feito, excelente. Se ainda não, é importante que você implemente o que foi visto no vídeo para poder continuar com a próxima aula, que tem como pré-requisito todo o código aqui escrito. Se por acaso você já domina essa parte, em cada capítulo, você poderá baixar o projeto feito até aquele ponto.
+
+O gabarito deste exercício é o passo a passo demonstrado no vídeo. Tenha certeza de que tudo está certo antes de continuar. Ficou com dúvida? Podemos te ajudar pelo nosso fórum.
+
+@@06
+Loops
+
+Quando usar um loop e quando usar recursão?
+
+Daremos preferência a recursão ou loops isolados.
+ 
+Loop em geral parece ser um code smell uma vez que transparece controle de fluxo que poderia ter sido isolado em uma função.
+Alternativa correta
+Daremos preferência a loops e funções longas, incluindo as com recursões.
+ 
+Alternativa correta
+Ambos resolvem o mesmo problema da mesma maneira, portanto tanto faz.
+
+@@07
+O que aprendemos?
+
+O que aprendemos nesta aula:
+Como o reduce funciona;
+Implementar o reduce;
+Variação de parâmetros na função;
+Utilizar o loop;
+Fazer recorrência dentro do loop.
