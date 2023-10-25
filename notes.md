@@ -468,3 +468,257 @@ Implementar o reduce;
 Variação de parâmetros na função;
 Utilizar o loop;
 Fazer recorrência dentro do loop.
+
+#### 25/10/2023
+
+@03-Outras funções com maps
+
+@@01
+Projeto da aula anterior
+
+Caso queira, você pode baixar o projeto do curso no ponto em que paramos na aula anterior.
+
+@@02
+Agrupando e trabalhando com esquemas de mapas mais complexos
+
+Aprendemos algumas possibilidades de trabalho com coleções, ora com recursividade ora com laço. Nesta aula, trabalharemos com outro exemplo que contém pedidos, também começaremos a organizar alguns arquivos desde já.
+Em nosso projeto teremos uma estrutura de dados simples para representar as compras que são efetuadas no site de uma loja. Criaremos um arquivo chamado db.clj, cujo namespace será ns loja.db. Neste arquivo inseriremos nossos pedidos.
+
+Definiremos os pedidos de uma maneira simples e um grande símbolo global dentro do namespace. Um pedido pedido1 conterá o usuário que realizou a solicitação e os itens.
+
+(ns loja.db)
+
+(def pedido1 {:usuario 15
+              :itens {:mochila { :id mochila, :quantidade 2, :preco-unitario 80}
+                      :camiseta { :id camiseta, :quantidade 3, :preco-unitario 40}
+                      :tenis    { :id tenis, :quantidade 1}}})
+COPIAR CÓDIGO
+É comum em sistemas de loja, atribuir um id para os produtos, a fim de identificá-los de maneira mais precisa no banco de dados. Como estamos realizando um estudo in memory, usaremos o próprio key-word.
+
+Para inserir esses conteúdos dentro de um grande mapa de maneira única, temos esse outro mapa com cada um dos itens. Poderíamos sim estar lidando com um vetor, inclusive com repetições de alguns elementos.
+
+Criaremos vários pedidos seguindo o molde pré-estabelecido, e podemos mudar alguns valores. O grande símbolo defn que comporta todos os pedidos será colocado enquanto função, assim poderemos gerá-lo diversas vezes e teremos como retorno um vetor que conterá todos os pedidos.
+
+(defn todos-os-pedidos []
+    [pedido1, pedido2, pedido3, pedido4, pedido5, pedido6])COPIAR CÓDIGO
+Criaremos um novo arquivo que chamaremos de aula3, cujo namespace será ns loja.aula3. Nosso objetivo é evocar algo que esteja em outro namespace, no caso todos-pedidos. Existem alguns cuidados que precisamos ter quando executamos algo no REPL, pois dependendo de como carregamos as execuções podem funcionar, mas apenas temporariamente.
+
+Mas como podemos usar símbolos que foram definidos em outro namespace? Existem várias formas, uma delas é inserir o require seguido de um vetor com todos os elementos que queremos trazer.
+
+(ns loja.aula3)
+    (:require [loja.db]))
+
+(println (loja.db/todos-os-pedidos) 
+COPIAR CÓDIGO
+Funcionou como esperávamos. Também é comum realizarmos importações utilizando o :as db.
+
+(ns loja.aula3)
+    (:require [loja.db :as db]))
+
+(println (loja.db/todos-os-pedidos) 
+COPIAR CÓDIGO
+Não manteremos dessa maneira porque é comum quando se trata de um arquivo do seu projeto abreviar como l.db. Esse é o padrão que encontraremos no mercado.
+
+(ns loja.aula3)
+    (:require [loja.db :as l.db]))
+
+(println (loja.db/todos-os-pedidos) 
+COPIAR CÓDIGO
+Até agora conhecemos processos de baixo nível, mas vamos explorar ações que realmente facilitem nosso fluxo de trabalho para que ele não fique tão manual. Iremos agora coletar todos os pedidos e agrupá-los por usuário. Encontramos facilmente na documentação do Closure o group-by e como utilizá-lo, além de alguns exemplos.
+
+Nosso objetivo é agrupar os pedidos pelo keyword :usuario, então escreveremos:
+
+(ns loja.aula3)
+    (:require [loja.db :as l.db]))
+
+(println (loja.db/todos-os-pedidos) 
+
+(println (group-by :usuario (l.db/todos-os-pedidos)))
+COPIAR CÓDIGO
+Foi feito o agrupamento por usuário, e podemos verificar a compra de cada um deles. O group-by serve para agrupamentos, e podemos passar funções. Temos um caso clássico com um debug de println:
+
+(ns loja.aula3)
+    (:require [loja.db :as l.db]))
+
+(println (loja.db/todos-os-pedidos) 
+
+(println (group-by :usuario (l.db/todos-os-pedidos)))
+
+(dfn minha-funcao-de-agrupamento 
+    [elemento]
+    (println "elemento" elemento) 
+    (:usuario elemento))
+
+(println (group-by minha-funcao-de-agrupamento (l.db/todos-os-pedidos)))
+COPIAR CÓDIGO
+Poderíamos fazer qualquer outro agrupamento, como por valor total ou primeiro produto, por exemplo. Podemos então passar uma função customizada pelo println e ver ela sendo chamada.
+
+Queremos saber é quantos pedidos possui cada usuário, e cada um possui um vetor com os produtos pedidos. O esquema está mais ou menos da seguinte maneira, o usuário 15, 1 e 10 possuem quantos produtos?
+
+; { 15 []
+;    1 []
+;   10 [] }COPIAR CÓDIGO
+Como podemos coletar esses vetores? Podemos acrescentar um vals ao nosso group-by e um count.
+
+(ns loja.aula3)
+    (:require [loja.db :as l.db]))
+
+(println (loja.db/todos-os-pedidos) 
+
+(println (group-by :usuario (l.db/todos-os-pedidos)))
+
+(dfn minha-funcao-de-agrupamento 
+    [elemento]
+    (println "elemento" elemento) 
+    (:usuario elemento))
+
+(println (group-by minha-funcao-de-agrupamento (l.db/todos-os-pedidos)))
+
+; { 15 [x,c,y]
+;    1 [x]
+;   10 [x]
+;   20 [x,2]}
+
+(println (count (vals (group-by :usuario (l.db/todos-os-pedidos)))))
+COPIAR CÓDIGO
+Teremos como resultado impresso o número 4, não é isso que queremos, 4 é o número total de usuários. O que queremos na verdade é mapear a função count:
+
+(println (map count (vals (group-by :usuario (l.db/todos-os-pedidos)))))COPIAR CÓDIGO
+Teremos como resultado impresso 3 1 1 1, o que é um dado confuso, não conseguimos saber com precisão sobre esses números. Temos uma sequência de informações ilegível.
+
+Precisamos tornar o resultado legível, que nos apresente uma informação clara sobre os usuários e seus respectivos pedidos. Neste caso, utilizar o vals não é a melhor alternativa. Queremos mapear a conta total por usuário, por isso faremos definiremos uma função conta-total-por-usuario.
+
+(dfn conta-total-por-usuario
+    [[usuario pedidos]]
+    [usuario (count pedidos)])
+
+(->> (l.db/todos-os-pedidos)
+     (group-by :usuario)
+     (map conta-total-por-usuario)
+     println)COPIAR CÓDIGO
+Temos como resultado:
+
+([15 3] [1 1] [10 1] [20 1])COPIAR CÓDIGO
+É compreensível o dado, o usuário 15 realizou 3 compras. Contudo, temos um vetor em que cada posição equivale a algo, para a esquerda temos o usuário, na direta as compras. Isso pode ser confuso.
+
+Ao invés devolvermos um vetor, retornaremos um mapa:
+
+(defn conta-total-por-usuario
+    [[usuario pedidos]]
+    {:usuario-id usuario
+     :total-de-pedidos (count pedidos)})
+COPIAR CÓDIGO
+Dessa maneira, teremos impresso dados mais claros. Inclusive, se agora quisermos adquirir o valor total dos pedidos, podemos redefinir a função:
+
+(dfn total-dos-pedidos
+    [pedidos]
+    -1)
+
+(defn quantia-de-pedidos-e-gasto-total-por-usuario
+    [[usuario pedidos]]
+    {:usuario-id usuario
+     :total-de-pedidos (count pedidos)
+     :preco-total (total-dos-pedidos pedidos)})
+
+(->> (l.db/todos-os-pedidos)
+     (group-by :usuario)
+     (map quantia-de-pedidos-e-gasto-total-por-usuário)
+      println)
+COPIAR CÓDIGO
+Passar por uma série de pedidos e somar o total, é algo que já conhecemos, mas o ponto é que costumamos trabalhar com mapas estruturados, e essas estruturas fazem sentido e são padronizadas. Se quisermos realmente calcular os pedidos, faremos:
+
+(println "PEDIDOS")
+
+(dfn total-dos-pedidos
+    [pedidos]
+    (println "pedido" pedidos))
+
+(defn quantia-de-pedidos-e-gasto-total-por-usuario
+    [[usuario pedidos]]
+    {:usuario-id usuario
+     :total-de-pedidos (count pedidos)
+     :preco-total (total-dos-pedidos pedidos)})
+
+(->> (l.db/todos-os-pedidos)
+     (group-by :usuario)
+     (map quantia-de-pedidos-e-gasto-total-por-usuário)
+      println)
+COPIAR CÓDIGO
+Teremos um conjunto que abarca cada pedido. Em seguida, iremos mapear o pedido e o total de cada item, e aplicaremos depois o reduce. Cada item possui uma chave e o valor, que são os detalhes. Esses detalhes nós multiplicaremos
+
+(println "PEDIDOS")
+
+(defn total-do-item
+    [[item-id detalhes]]
+    (* (get detalhes :quantidade 0)  (get detalhes :preco-unitario 0)))
+
+(defn total-do-pedido
+    [pedido]
+    (reduce + (map total-do-item pedido)))
+
+(defn total-dos-pedidos
+    [pedidos]
+    (->> pedidos
+        (map :itens)
+        (map total-do-pedido)
+        (reduce +)))
+
+(defn quantia-de-pedidos-e-gasto-total-por-usuario
+    [[usuario pedidos]]
+    {:usuario-id usuario
+     :total-de-pedidos (count pedidos)
+     :preco-total (total-dos-pedidos pedidos)})
+
+(->> (l.db/todos-os-pedidos)
+     (group-by :usuario)
+     (map quantia-de-pedidos-e-gasto-total-por-usuario)
+      println)
+COPIAR CÓDIGO
+Será coletado o pedido, mapeado o total de cada item e somar, e então teremos o total-do-pedido.
+
+@@03
+Faça como eu fiz na aula
+
+Chegou a hora de você seguir todos os passos realizados por mim durantes esta aula. Caso já tenha feito, excelente. Se ainda não, é importante que você implemente o que foi visto no vídeo para poder continuar com a próxima aula, que tem como pré-requisito todo o código aqui escrito. Se por acaso você já domina essa parte, em cada capítulo, você poderá baixar o projeto feito até aquele ponto.
+
+O gabarito deste exercício é o passo a passo demonstrado no vídeo. Tenha certeza de que tudo está certo antes de continuar. Ficou com dúvida? Podemos te ajudar pelo nosso fórum.
+
+@@04
+Agrupamento
+
+Ao agruparmos passamos uma função de agrupamento. Se queremos agrupar mapas por um keyword determinado passamos ele para a função de agrupamento. Mas se quero agrupar pelo número de certificados que um usuário possui devo fazer:
+
+
+(defn agrupadora [pessoa] (count (:certificados pessoa)))
+
+(group-by agrupadora pessoas)
+ 
+Agrupamos pelo número de certificados que uma pessoa possui.
+Alternativa correta
+(defn agrupadora [pessoa] (count (:certificados pessoa)))
+
+(group-by pessoas agrupadora)
+ 
+Lembre-se que as funções recebem a coleção sempre como último parâmetro?
+Alternativa correta
+(defn agrupadora [pessoas] (map count (:certificados pessoas)))
+
+(group-by pessoas agrupadora)
+ 
+Lembre-se que as funções recebem a coleção sempre como último parâmetro?
+Alternativa correta
+(defn agrupadora [pessoas] (map count (:certificados pessoas)))
+
+(group-by agrupadora pessoas)
+ 
+Parabéns, você acertou!
+
+@@05
+O que aprendemos?
+PRÓXIMA ATIVIDADE
+
+O que aprendemos nesta aula:
+Simular um banco em memória;
+Utilizar o require para fazer a importação de classe;
+Utilizar um as para abreviação;
+Agrupar dados.
